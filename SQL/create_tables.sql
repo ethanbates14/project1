@@ -6,23 +6,16 @@ CREATE TABLE p1_cities (
 	zipcode VARCHAR(5) NOT NULL,
 	latitude NUMERIC  NOT NULL,
 	longitude NUMERIC  NOT NULL,
-	population_id INTEGER
+	population INTEGER
 );
 
 CREATE TABLE p1_states (
 	id SERIAL PRIMARY KEY,
-	state_name VARCHAR NOT NULL,
 	state_abbrev VARCHAR NOT NULL
 );
 
-CREATE TABLE p1_population (
-	id SERIAL PRIMARY KEY,
-	city_id INTEGER NOT NULL,
-	population_total INTEGER
-);
 -- add constraints
 ALTER TABLE p1_cities ADD CONSTRAINT fk_states FOREIGN KEY (state_id) REFERENCES p1_states (id);
-ALTER TABLE p1_cities ADD CONSTRAINT fk_population FOREIGN KEY (population_id) REFERENCES p1_population (id);
 
 -- user tables
 CREATE TABLE p1_users (
