@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Find a Location
+{% endblock %}
+
+{% block body %}
+    <h1>Search for Stuff</h1>
+
+    <form class="form-inline">
+        <input class="form-control" type="search" placeholder="Search for a Location" id="search_locations">
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+
+    <table class="table table-striped">
+        <thead>
+            <th scope="col">CITY</th>
+            <th scope="col">STATE</th>
+            <th scope="col">ZIP Code</th>
+        </thead>
+        <tbody>
+             {% for loc in locations %}
+            <tr>
+
+                <td>{{ loc.city_name }}</td>
+                <td>{{ loc.state_id }}</td>
+                <td>{{ loc.zipcode }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
