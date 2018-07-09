@@ -5,14 +5,15 @@
 {% endblock %}
 
 {% block body %}
-    <h1>LOG IN</h1>
-    <form>
-        <div class="form-group">
-            <label for="user_email">Email address</label>
-            <input type="email" class="form-control" id="user_email" aria-describedby="emailHelp" placeholder="Enter email">
-            <label for="user_pwd">Password</label>
-            <input type="password" class="form-control" id="user_pwd" placeholder="Password">
-        </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
+{% if session['logged_in'] %}
+<p>You're logged in already!</p>
+{% else %}
+<h2>LOG IN</h2>
+<form action="/login" method="POST">
+  <input type="username" name="username" placeholder="Username">
+  <input type="password" name="password" placeholder="Password">
+  <input type="submit" value="Log in">
+</form>
+
+{% endif %}
 {% endblock %}
