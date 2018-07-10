@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Find a Location
+{% endblock %}
+
+{% block body %}
+    <h2>Search Results</h2>
+    <table class="table table-striped">
+        <thead>
+            <th scope="col">CITY</th>
+            <th scope="col">STATE</th>
+            <th scope="col">ZIP Code</th>
+        </thead>
+        <tbody>
+             {% for loc in locations %}
+            <tr>
+
+                <td>{{ loc.city_name }}</td>
+                <td>{{ loc.state_id }}</td>
+                <td>{{ loc.zipcode }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

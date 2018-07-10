@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, session, render_template, request, redirect, url_for
+from flask import Flask, session, render_template, request, redirect, url_for, flash
 from flask_session import Session
 
 from sqlalchemy import create_engine,Table,Column,Integer,Numeric,String,Date,ForeignKey
@@ -74,9 +74,6 @@ def index():
 	if not session.get('logged_in'):
 		return render_template('index.html')
 	else:
-		if request.method == 'POST':
-			username = getname(request.form['username'])
-			return render_template('index.html', userdata=getfollowedby(username))
 		return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -117,8 +114,25 @@ def logout():
 
 @app.route("/search", methods=['GET', 'POST'])
 def search():
-    locations = db.execute("SELECT * FROM p1_cities ORDER BY state_id, city_name LIMIT 2").fetchall()
-    return render_template("search.html",locations=locations)
+	"""Search Form"""
+	if request.method == "GET":
+		return render_template("search.html")
+	else:
+		return render_template("results.html")
+
+
+@app.route("/results", methods=['GET', 'POST'])
+def results():
+	"""Results Form"""
+	loc_param = request.form['search_param']
+	loc_input = request.form['search_input']
+
+	if loc_param == 'zipcode':
+		loc_data = db.query(Cities).filter(Cities.zipcode.like("%" + loc_input + "%")).all()
+	elif loc_param == 'cityname':
+		loc_data = db.query(Cities).filter(Cities.city_name.like("%" + loc_input + "%")).all()
+
+	return render_template("results.html", locations=loc_data)
 
 @app.route("/location")
 def location():
