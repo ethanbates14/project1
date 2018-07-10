@@ -7,6 +7,8 @@ from sqlalchemy import create_engine,Table,Column,Integer,Numeric,String,Date,Fo
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 
+import requests,json
+
 app = Flask(__name__)
 
 # Check for DB environment variable
@@ -121,14 +123,24 @@ def search():
 		return render_template("results.html")
 
 
-@app.route("/results", methods=['GET', 'POST'])
+@app.route("/results", methods=['POST'])
 def results():
-	loc_data = db.query(Cities).filter(Cities.zipcode.like("%91601%")).all()
+	search_param = request.form['search_param']
+	search_val = request.form['param_val']
+
+	if search_param == 'zipcode':
+		loc_data = db.query(Cities).filter(Cities.zipcode.like("%" + search_val + "%")).all()
+	elif search_param == 'cityname':
+		search_val = search_val.upper()
+		loc_data = db.query(Cities).filter(Cities.city_name.like("%" + search_val + "%")).all()
+
 	return render_template("results.html", locations=loc_data)
 
 @app.route("/location")
 def location():
-    return render_template("location.html")
+	ds_apikey="9a80dd9e0d1a1d0ca8931b3899507105"
+	weather = requests.get("https://api.darksky.net/forecast/9a80dd9e0d1a1d0ca8931b3899507105/42.37,-71.11").json()
+	return render_template("location.html",weather=weather)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -6,4 +6,16 @@
 
 {% block body %}
     <h1>Location</h1>
+        <table class="table table-striped table-bordered">
+        <thead>
+            <th scope="col">Keys</th>
+        </thead>
+        <tbody>
+             {% for k,v in weather['currently'].items(): %}
+            <tr>
+                <td>{{ k }} : {{ v }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
