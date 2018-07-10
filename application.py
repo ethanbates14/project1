@@ -123,15 +123,7 @@ def search():
 
 @app.route("/results", methods=['GET', 'POST'])
 def results():
-	"""Results Form"""
-	loc_param = request.form['search_param']
-	loc_input = request.form['search_input']
-
-	if loc_param == 'zipcode':
-		loc_data = db.query(Cities).filter(Cities.zipcode.like("%" + loc_input + "%")).all()
-	elif loc_param == 'cityname':
-		loc_data = db.query(Cities).filter(Cities.city_name.like("%" + loc_input + "%")).all()
-
+	loc_data = db.query(Cities).filter(Cities.zipcode.like("%91601%")).all()
 	return render_template("results.html", locations=loc_data)
 
 @app.route("/location")
