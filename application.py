@@ -1,11 +1,10 @@
 import os
 
-from flask import Flask, session, render_template, request, redirect, url_for, flash
+from flask import Flask, session, render_template, request, redirect, url_for, flash, jsonify
 from flask_session import Session
 
-from sqlalchemy import create_engine,Table,Column,Integer,Numeric,String,Date,ForeignKey
-from sqlalchemy.orm import scoped_session, sessionmaker, relationship
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 import requests,json
 
@@ -23,51 +22,6 @@ Session(app)
 # Set up database
 engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
-Base = declarative_base()
-
-# Table Classes
-class States(Base):
-	__tablename__ = 'p1_states'
-	id = Column(Integer, primary_key=True)
-	state_abbrev = Column(String, nullable=False)
-	def __repr__(self):
-		return "<States(state_abbrev='%s')>" % (
-			self.state_abbrev)
-
-class Cities(Base):
-	__tablename__ = 'p1_cities'
-	id = Column(Integer, primary_key=True)
-	city_name = Column(String, nullable=False)
-	state_id = Column(Integer, ForeignKey('states.id'))
-	zipcode = Column(String, nullable=False)
-	latitude = Column(Numeric)
-	longitude = Column(Numeric)
-	population = Column(Integer)
-	def __repr__(self):
-		return "<Cities(city_name='%s', state_id='%s', zipcode='%s', latitude='%s',longitude='%s',population='%s',)>" % (
-			self.city_name, self.state_id, self.zipcode, self.latitude, self.longitude,self.population)
-
-class User(Base):
-	__tablename__ = 'p1_users'
-	id = Column(Integer, primary_key=True)
-	first_name = Column(String)
-	last_name = Column(String)
-	username = Column(String)
-	usr_pwd = Column(String)
-	def __repr__(self):
-		return "<User(first_name='%s', last_name='%s', username='%s', usr_pwd='%s',)>" % (
-			self.last_name, self.last_name, self.username, self.usr_pwd)
-
-class Checkin(Base):
-	__tablename__ = 'p1_user_checkin'
-	id = Column(Integer, primary_key=True)
-	user_id = Column(Integer, ForeignKey('user.id'))
-	city_id = Column(Integer, ForeignKey('cities.id'))
-	check_in_date = Column(Date)
-	usr_comments = Column(String)
-	def __repr__(self):
-		return "<Checkin(user_id='%s', city_id='%s', check_in_date='%s', usr_comments='%s',)>" % (
-			self.user_id, self.city_id, self.check_in_date, self.usr_comments)
 
 #routing
 @app.route("/", methods=['GET', 'POST'])
@@ -87,22 +41,35 @@ def login():
 		uname = request.form['username']
 		passw = request.form['password']
 		try:
-			userdata = db.query(User).filter_by(username=uname , usr_pwd=passw).first()
+			userdata = db.execute("SELECT * FORM p1_users WHERE username = :x AND usr_pwd = :y", {"x": uname, "y": passw}).fetchone()
+
 			if userdata is not None:
 				session['logged_in'] = True
 				return redirect(url_for('search'))
 			else:
-				return 'Invalid Login'
+				return render_template('error.html', message='Invalid Login')
 		except:
-			return "Invalid Login"
+			return render_template('error.html', message='Invalid Login')
 
 @app.route('/register/', methods=['GET', 'POST'])
 def register():
 	"""Register Form"""
-	if request.method == 'POST':
-		new_user = User(first_name=request.form['firstname'], last_name=request.form['lastname'],
-		    username=request.form['username'], usr_pwd=request.form['password'])
-		db.add(new_user)
+	if request.method == 'GET':
+		return render_template('register.html')
+	else:
+		first_name=request.form['firstname']
+		last_name=request.form['lastname']
+		username=request.form['username']
+		usr_pwd=request.form['password']
+
+		#Logic to check if user already exists
+		check_data = db.execute("SELECT * FROM p1_users WHERE username = :x", {"x": username}).fetchall()
+
+		if check_data is not None:
+			return render_template('error.html', message='User Already Exists!')
+		else:
+			db.execute("INSERT INTO p1_users (first_name, last_name, username, usr_pwd) VALUES (:a, :b, :c, :d)",
+				{"a": first_name, "b": last_name, "c": username, "d": usr_pwd })
 		db.commit()
 		return render_template('login.html')
 	return render_template('register.html')
@@ -129,10 +96,10 @@ def results():
 	search_val = request.form['param_val']
 
 	if search_param == 'zipcode':
-		loc_data = db.query(Cities).filter(Cities.zipcode.like("%" + search_val + "%")).all()
+		loc_data = db.execute("SELECT * FROM p1_cities WHERE zipcode like %:x%", {"x": search_val}).fetchall()
 	elif search_param == 'cityname':
 		search_val = search_val.upper()
-		loc_data = db.query(Cities).filter(Cities.city_name.like("%" + search_val + "%")).all()
+		loc_data = db.execute("SELECT * FROM p1_cities WHERE city_name like %:x%", {"x": search_val}).fetchall()
 
 	return render_template("results.html", locations=loc_data)
 
@@ -141,6 +108,22 @@ def location():
 	ds_apikey="9a80dd9e0d1a1d0ca8931b3899507105"
 	weather = requests.get("https://api.darksky.net/forecast/9a80dd9e0d1a1d0ca8931b3899507105/42.37,-71.11").json()
 	return render_template("location.html",weather=weather)
+
+@app.route("/api/<string:zipcode>")
+def zipcode_api(zipcode):
+    """API Data From ZipCode"""
+
+    # Make sure zipcode exists.
+    api_data = db.execute("SELECT * FROM p1_cities WHERE zipcode = :x", {"x": zipcode}).fetchall()
+    if api_data is None:
+        return jsonify({"error": "Invalid ZIP CODE"}), 422
+
+    # Get all passengers.
+    return jsonify({
+            "zipcode": api_data.city_name,
+            "cityname": api_data.zipcode,
+            "duration": api_data.state_id
+        })
 
 if __name__ == '__main__':
     app.run(debug=True)
