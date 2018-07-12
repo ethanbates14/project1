@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Error
+    Success!
 {% endblock %}
 
 {% block body %}
@@ -9,14 +9,14 @@
   <div class="row align-items-center">
     <div class="col"></div>
     <div class="col-sm-4">
-      <div class="alert alert-danger" role="alert">{{ message }}</div>
+      <div class="alert alert-success" role="alert">{{ message }}</div>
     </div>
     <div class="col"></div>
   </div>
   <div class="row align-items-center">
     <div class="col"></div>
     <div class="col-sm-4">
-      <div><a href="{{ url_for('index') }}">Back to Home</a></div>
+      <div><a href="{{ url_for('search') }}">Back to Search</a></div>
     </div>
     <div class="col"></div>
   </div>

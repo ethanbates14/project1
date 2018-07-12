@@ -49,7 +49,7 @@ def login():
 				session['user_no'] = userdata.id
 				return redirect(url_for('search'))
 			else:
-				return render_template('error.html', message='Invalid Login')
+				return render_template('error.html', message='ERROR: Invalid Login')
 		except:
 			return render_template('error.html', message='Something went wrong')
 
@@ -100,14 +100,17 @@ def results():
 	search_val = "%" + search_val.upper() + "%"
 
 	if search_param == 'zipcode':
+		param_display = 'Zip Code'
 		res_data = db.execute("SELECT * FROM p1_cities JOIN p1_states ON p1_states.id = p1_cities.state_id WHERE zipcode like :x",
 			{"x": search_val}).fetchall()
 	elif search_param == 'cityname':
+		param_display = 'City Name'
 		search_val = search_val.upper()
 		res_data = db.execute("SELECT * FROM p1_cities JOIN p1_states ON p1_states.id = p1_cities.state_id WHERE city_name like :x",
 			{"x": search_val}).fetchall()
 
-	return render_template("results.html", locations=res_data, user_input=search_val,user_select=search_param)
+	val_display = search_val.replace('%','')
+	return render_template("results.html", locations=res_data, user_input=val_display,user_select=param_display)
 
 @app.route("/location/<zipcode>", methods=['GET', 'POST'])
 def location(zipcode):
@@ -115,7 +118,7 @@ def location(zipcode):
 	ds_apikey="9a80dd9e0d1a1d0ca8931b3899507105"
 	sql_query = """
 	SELECT
-	a.city_name as place_name,b.state_abbrev as state,
+	a.id,a.city_name as place_name,b.state_abbrev as state,
 	a.latitude as latitude,a.longitude as longitude,
 	a.zipcode as zip,a.population as population,
 	COUNT(c.id) as check_ins
@@ -123,35 +126,55 @@ def location(zipcode):
 	JOIN p1_states b ON a.state_id = b.id
 	LEFT JOIN p1_user_checkin c ON c.city_id = a.id
 	WHERE a.zipcode = :x
-	GROUP BY a.city_name,b.state_abbrev,
+	GROUP BY a.id,a.city_name,b.state_abbrev,
 	a.latitude,a.longitude,a.zipcode,a.population
 	"""
 
 	# Make sure zipcode exists.
 	loc_data = db.execute(f"{sql_query}", {"x": zipcode}).fetchall()
+	loc_dict={}
 	if not loc_data:
 		return render_template('error.html', message='Something went wrong')
 	else:
+		loc_dict['id'] = str(loc_data[0][0])
+		loc_dict['place_name'] = str(loc_data[0][1])
+		loc_dict['state'] = str(loc_data[0][2])
+		loc_dict['latitude'] = str(loc_data[0][3])
+		loc_dict['longitude'] = str(loc_data[0][4])
+		loc_dict['zipcode'] = str(loc_data[0][5])
+		loc_dict['population'] = str(loc_data[0][6])
+		loc_dict['check_ins'] = str(loc_data[0][7])
 
-		lat=str(loc_data[0][2])
-		lng=str(loc_data[0][3])
-
-		weather = requests.get(f"https://api.darksky.net/forecast/{ds_apikey}/{lat},{lng}").json()
+		weather = requests.get(f"https://api.darksky.net/forecast/{ds_apikey}/{loc_dict['latitude']},{loc_dict['longitude']}").json()
 		curr_weather = weather['currently']
 
 		cw_time = datetime.datetime.fromtimestamp(curr_weather['time']).strftime('%Y-%m-%d %H:%M:%S')
 
-		return render_template("location.html",curr_weather=curr_weather)
+		return render_template("location.html",curr_weather=curr_weather,loc_detail=loc_dict,curr_time=cw_time)
 
 @app.route('/checkin', methods=['POST'])
 def checkin():
-	#city_id = request.form['city_id']
+	user_no = session['user_no']
+	city_id = request.form['city_id']
 	comments=request.form['loc_comments']
-	return f"{session['user_id']} | {comments}"
+	curr_date = datetime.datetime.now().strftime('%Y-%m-%d')
+
+	#Logic to check if user already exists
+	prev_chk = db.execute("SELECT * FROM p1_user_checkin WHERE user_id = :x AND city_id = :y", {"x": user_no, "y": city_id}).fetchone()
+
+	if prev_chk is not None:
+		return render_template('error.html', message='Already Checked in!')
+	else:
+		db.execute("INSERT INTO p1_user_checkin (user_id,city_id,check_in_date,user_comments) VALUES (:a, :b, :c, :d)",
+			{"a": session['user_no'], "b": city_id, "c": curr_date, "d": comments })
+		db.commit()
+
+	return render_template('success.html', message='Thanks for Checking In!')
 
 @app.route('/test', methods=['GET', 'POST'])
 def test():
-	return f"{session['user_no']} {session['logged_in']}"
+	#return f"{session['user_no']} {session['logged_in']}"
+	return f"{session.keys()}"
 
 @app.route("/api/<string:zipcode>", methods=['GET'])
 def zipcode_api(zipcode):

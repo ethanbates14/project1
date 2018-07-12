@@ -7,8 +7,8 @@
 {% block body %}
 
     <div class="container">
-        <h2>Searched By: [ {{user_select}} ] </h2>
-        <h2>Results For: [ {{user_input}} ] </h2>
+        <h3 class="display-4">Searched By: <span class="text-info">[ {{user_select}} ]</span></h3>
+        <h3 class="display-4">Results For: <span class="text-info">[ {{user_input}} ]</span> </h3>
     <div class="row">
         <div class="col-sm-12">
     <table class="table table-striped table-bordered">
@@ -31,7 +31,7 @@
                     <form action="/location/{{ loc.zipcode }}" method="post">
                         <input type="hidden" name="lat" value="{{ loc.latitude }}">
                         <input type="hidden" name="lng" value="{{ loc.longitude }}">
-                        <button type="submit" name="zipcode" value="{{ loc.zipcode }}" class="btn btn-primary">Get Weather</button>
+                        <button type="submit" name="zipcode" value="{{ loc.zipcode }}" class="btn btn-primary">Get Info</button>
                     </form>
                 </td>
             </tr>

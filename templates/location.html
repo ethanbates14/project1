@@ -6,12 +6,34 @@
 
 {% block body %}
 <div class="container text-center">
-    <h2 class="display-3">Location</h1>
-    <h2 class="display-3">Check In</h2>
+  <div class="row align-items-center">
+    <div class="col"></div>
+    <div class"col-sm-8">
+      <h1 class="display-4 text-center">
+      {{ loc_detail.place_name }},{{ loc_detail.state }} {{ loc_detail.zipcode }}
+      <span class="text-info">[{{ loc_detail.latitude }},{{ loc_detail.longitude }}]</span>
+      </h1>
+      <h4>{{ curr_time }}</h4>
+    </div>
+    <div class="col"></div>
+  </div>
+
+  <div class="row align-items-center">
+    <div class="col"></div>
+    <div class"col-sm-8">
+
+<p><strong>Population:</strong> {{ loc_detail.population }}</p>
+<p><strong>User Check-Ins:</strong> {{ loc_detail.check_ins }}</p>
+    </div>
+    <div class="col"></div>
+  </div>
 </div>
+
+
 {% if not session['logged_in'] %}
 <div class="container text-center">
-  <div class="row align-items-cente">
+  <h1 class="display-4">Check In</h1>
+  <div class="row align-items-center">
     <div class="col"></div>
     <div class="col-sm-6">
       <div class="alert alert-primary" role="alert">Please Log In First!</div>
@@ -21,12 +43,15 @@
 </div>
 {% else %}
 <div class="container text-center">
-  <div class="row align-items-cente">
+  <h1 class="display-4">Check In</h1>
+  <div class="row align-items-center">
     <div class="col"></div>
     <div class="col-sm-6">
       <form action="/checkin" method="POST">
         <div class="form-group">
           <label for="comments"></label>
+
+          <input type="hidden" name="city_id" value="{{ loc_detail.id }}">
           <textarea class="form-control" name="loc_comments" rows="3" placeholder="Comments..."></textarea>
           <br>
           <button type="submit" class="btn btn-primary btn-lg">Check In</button>
