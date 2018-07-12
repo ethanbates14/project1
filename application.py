@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 import requests,json
+import datetime
 
 app = Flask(__name__)
 
@@ -24,13 +25,10 @@ engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
 
 #routing
-@app.route("/", methods=['GET', 'POST'])
+@app.route("/", methods=['GET'])
 def index():
-	""" Session """
-	if not session.get('logged_in'):
-		return render_template('index.html')
-	else:
-		return render_template('index.html')
+	""" Landing """
+	return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -44,7 +42,10 @@ def login():
 			userdata = db.execute("SELECT * FROM p1_users WHERE username = :x AND usr_pwd = :y", {"x": uname, "y": passw}).fetchone()
 
 			if userdata is not None:
+				session['user_id'] = uname
 				session['logged_in'] = True
+				session['first_name'] = userdata.first_name
+				session['last_name'] = userdata.first_name
 				return redirect(url_for('search'))
 			else:
 				return render_template('error.html', message='Invalid Login')
@@ -72,12 +73,12 @@ def register():
 				{"a": first_name, "b": last_name, "c": reg_username, "d": usr_pwd })
 		db.commit()
 		return render_template('login.html')
-	return render_template('register.html')
 
 @app.route("/logout")
 def logout():
 	"""Logout Form"""
-	session['logged_in'] = False
+	if session:
+		session.clear()
 	return redirect(url_for('index'))
 
 @app.route("/search", methods=['GET', 'POST'])
@@ -98,26 +99,52 @@ def results():
 	search_val = "%" + search_val.upper() + "%"
 
 	if search_param == 'zipcode':
-		loc_data = db.execute("SELECT * FROM p1_cities JOIN p1_states ON p1_states.id = p1_cities.state_id WHERE zipcode like :x",
+		res_data = db.execute("SELECT * FROM p1_cities JOIN p1_states ON p1_states.id = p1_cities.state_id WHERE zipcode like :x",
 			{"x": search_val}).fetchall()
 	elif search_param == 'cityname':
 		search_val = search_val.upper()
-		loc_data = db.execute("SELECT * FROM p1_cities JOIN p1_states ON p1_states.id = p1_cities.state_id WHERE city_name like :x",
+		res_data = db.execute("SELECT * FROM p1_cities JOIN p1_states ON p1_states.id = p1_cities.state_id WHERE city_name like :x",
 			{"x": search_val}).fetchall()
 
-	return render_template("results.html", locations=loc_data, user_input=search_val,user_select=search_param)
+	return render_template("results.html", locations=res_data, user_input=search_val,user_select=search_param)
 
 @app.route("/location/<zipcode>", methods=['GET', 'POST'])
 def location(zipcode):
+	"""Location Data"""
 	ds_apikey="9a80dd9e0d1a1d0ca8931b3899507105"
+	sql_query = """
+	SELECT
+	a.city_name as place_name,b.state_abbrev as state,
+	a.latitude as latitude,a.longitude as longitude,
+	a.zipcode as zip,a.population as population,
+	COUNT(c.id) as check_ins
+	FROM p1_cities a
+	JOIN p1_states b ON a.state_id = b.id
+	LEFT JOIN p1_user_checkin c ON c.city_id = a.id
+	WHERE a.zipcode = :x
+	GROUP BY a.city_name,b.state_abbrev,
+	a.latitude,a.longitude,a.zipcode,a.population
+	"""
 
-	if request.method == 'POST':
-		lat=request.form['lat']
-		lng=request.form['lng']
+	# Make sure zipcode exists.
+	loc_data = db.execute(f"{sql_query}", {"x": zipcode}).fetchall()
+	if not loc_data:
+		return render_template('error.html', message='Something went wrong')
+	else:
+
+		lat=str(loc_data[0][2])
+		lng=str(loc_data[0][3])
 
 		weather = requests.get(f"https://api.darksky.net/forecast/{ds_apikey}/{lat},{lng}").json()
 		curr_weather = weather['currently']
-	return render_template("location.html",curr_weather=curr_weather)
+
+		cw_time = datetime.datetime.fromtimestamp(curr_weather['time']).strftime('%Y-%m-%d %H:%M:%S')
+
+		return render_template("location.html",curr_weather=curr_weather)
+
+@app.route('/test', methods=['GET', 'POST'])
+def test():
+	return f"{session['user_id']} {session['logged_in']}"
 
 @app.route("/api/<string:zipcode>", methods=['GET'])
 def zipcode_api(zipcode):

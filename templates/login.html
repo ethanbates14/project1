@@ -6,14 +6,35 @@
 
 {% block body %}
 {% if session['logged_in'] %}
-<p>You're logged in already!</p>
+<div class="container text-center">
+  <div class="row align-items-cente">
+    <div class="col"></div>
+    <div class="col-sm-4">
+      <div class="alert alert-primary" role="alert">Already Logged In!</div>
+    </div>
+    <div class="col"></div>
+  </div>
+</div>
 {% else %}
-<h2>LOG IN</h2>
-<form action="/login" method="POST">
-  <input type="username" name="username" placeholder="Username">
-  <input type="password" name="password" placeholder="Password">
-  <input type="submit" value="Log in">
-</form>
+<div class="container text-center">
+  <div class="row align-items-cente">
+    <div class="col"></div>
+    <div class="col-sm-4">
+      <h2 class="display-3">LOG IN</h2>
+      <form action="/login" method="POST">
+        <div class="form-group">
+          <label for="username"></label>
+          <input type="username" class="form-control" name="username" placeholder="Username">
+          <label for="password"></label>
+          <input type="password" class="form-control" name="password" placeholder="Password">
+          <br>
+          <button type="submit" class="btn btn-primary btn-lg">Log In</button>
+        </div>
+      </form>
+    </div>
+    <div class="col"></div>
+  </div>
+</div>
 
 {% endif %}
 {% endblock %}

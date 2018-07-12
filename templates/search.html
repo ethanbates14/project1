@@ -5,13 +5,26 @@
 {% endblock %}
 
 {% block body %}
-    <h2>Search for location</h2>
-        <form action="/results" method="POST">
-            <select name="search_param">
+<div class="container text-center">
+  <div class="row align-items-cente">
+    <div class="col"></div>
+    <div class="col-sm-6">
+      <h2 class="display-3">Search Location</h2>
+      <form action="/results" method="POST">
+        <div class="form-group">
+          <label for="search_param" class="form-text text-muted">Search Parameter</label>
+          <select class="form-control" name="search_param">
               <option value="zipcode">Zip Code</option>
               <option value="cityname">City Name</option>
-            </select>
-          <input type="text" name ="param_val">
-          <input type="submit" value="Search">
-        </form>
+          </select>
+          <label for="param_val" class="form-text text-muted">Search Value</label>
+          <input type="text" class="form-control" name="param_val" placeholder="Search">
+          <br>
+          <button type="submit" class="btn btn-primary btn-lg">Search</button>
+        </div>
+      </form>
+    </div>
+    <div class="col"></div>
+  </div>
+</div>
 {% endblock %}
