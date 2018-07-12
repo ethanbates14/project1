@@ -38,6 +38,8 @@ def login():
 	else:
 		uname = request.form['username']
 		passw = request.form['password']
+
+		#login authenication
 		try:
 			userdata = db.execute("SELECT * FROM p1_users WHERE username = :x AND usr_pwd = :y", {"x": uname, "y": passw}).fetchone()
 
@@ -147,10 +149,19 @@ def location(zipcode):
 
 		weather = requests.get(f"https://api.darksky.net/forecast/{ds_apikey}/{loc_dict['latitude']},{loc_dict['longitude']}").json()
 		curr_weather = weather['currently']
-
 		cw_time = datetime.datetime.fromtimestamp(curr_weather['time']).strftime('%Y-%m-%d %H:%M:%S')
 
-		return render_template("location.html",curr_weather=curr_weather,loc_detail=loc_dict,curr_time=cw_time)
+		#get user check in data
+		ch_sql = """
+		SELECT u.username,a.check_in_date,a.user_comments
+		FROM p1_user_checkin a JOIN p1_users u ON u.id = a.user_id
+		JOIN p1_cities b ON a.city_id = b.id
+		WHERE a.city_id = :c
+		"""
+
+		ch_data = db.execute(f"{ch_sql}", {"c": loc_dict['id']}).fetchall()
+
+		return render_template("location.html",curr_weather=curr_weather,loc_detail=loc_dict,curr_time=cw_time,ch_data=ch_data)
 
 @app.route('/checkin', methods=['POST'])
 def checkin():
@@ -171,10 +182,12 @@ def checkin():
 
 	return render_template('success.html', message='Thanks for Checking In!')
 
+""" Test Block
 @app.route('/test', methods=['GET', 'POST'])
-def test():
+#def test():
 	#return f"{session['user_no']} {session['logged_in']}"
 	return f"{session.keys()}"
+"""
 
 @app.route("/api/<string:zipcode>", methods=['GET'])
 def zipcode_api(zipcode):
