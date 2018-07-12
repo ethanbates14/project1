@@ -46,6 +46,7 @@ def login():
 				session['logged_in'] = True
 				session['first_name'] = userdata.first_name
 				session['last_name'] = userdata.first_name
+				session['user_no'] = userdata.id
 				return redirect(url_for('search'))
 			else:
 				return render_template('error.html', message='Invalid Login')
@@ -142,9 +143,15 @@ def location(zipcode):
 
 		return render_template("location.html",curr_weather=curr_weather)
 
+@app.route('/checkin', methods=['POST'])
+def checkin():
+	#city_id = request.form['city_id']
+	comments=request.form['loc_comments']
+	return f"{session['user_id']} | {comments}"
+
 @app.route('/test', methods=['GET', 'POST'])
 def test():
-	return f"{session['user_id']} {session['logged_in']}"
+	return f"{session['user_no']} {session['logged_in']}"
 
 @app.route("/api/<string:zipcode>", methods=['GET'])
 def zipcode_api(zipcode):
